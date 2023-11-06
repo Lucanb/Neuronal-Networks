@@ -2,6 +2,7 @@ import pickle, gzip, numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import math
+import random
 
 class ActivateFunctions:
   
@@ -109,7 +110,17 @@ class RandomDistribution:
 
     biases = np.random.randn(self.output_size) * 0.01
     return np.abs(biases)
+  
+  def initPerm(self):
+    array=[]
+    for i in range(self.input_size):
+      array.append(i)
+    return array
 
+  def randomShuffle(self,array):
+    
+    random.shuffle(array)
+    return array
 
 class ClassifierDigits:
  
@@ -120,35 +131,54 @@ class ClassifierDigits:
         self.count_perceptrons = count_perceptrons
         self.learning_rate = learning_rate
     
-        randomV = RandomDistribution(input_size,output_size)
+        self.randomV = RandomDistribution(input_size,output_size)
 
         #self.weights = randomV.xavierDistribution()
-        self.weights = randomV.xavierTensor()
-        self.bias = randomV.initialize_biases_sigmoid()
+        self.weights = self.randomV.xavierTensor()
+        self.bias = self.randomV.initialize_biases_sigmoid()
         self.mat =  np.identity(10)
     
 
 
     def weightCalculus(self,input_data,element):
+        
         dotProduct = np.dot(input_data,self.weights) + self.bias
         activatedFunctions = ActivateFunctions(dotProduct).SoftStep()
         error = (self.mat[element] - activatedFunctions) * self.learning_rate
+        errorMatrix = np.transpose(np.tile(input_data, (self.count_perceptrons, 1)))
+        for i in range(self.count_perceptrons):
+            errorMatrix[:, i] *= error[0][i]
+        self.weights = self.weights + errorMatrix
+        self.biases = self.biases + (self.mat[element] - activatedFunctions) * self.learning_rate 
 
-
-    
-    def wightPreactivated():
-        return
-    
-    def activateFunction(self,act,type):
-        activate = ActivateFunctions()        
-        return activate.type(self)
-
+    #aici intervalul sa fie bun
+    def wightPreactivated(self,input_data,element):
+     
+        dotProduct = np.dot(input_data,self.weights) + self.bias
+        activatedFunctions = ActivateFunctions(dotProduct).identityActivate()
+        error = (self.mat[element] - activatedFunctions) * self.learning_rate
+        errorMatrix = np.transpose(np.tile(input_data, (self.count_perceptrons, 1)))
+        for i in range(self.count_perceptrons):
+            errorMatrix[:, i] *= error[0][i]
+        self.weights = self.weights + errorMatrix
+        self.biases = self.biases + (self.mat[element] - activatedFunctions) * self.learning_rate 
+#Mai am de lucru aici 
     def train(self,train_set,count):
-        return
+       
+        randomPerm = self.randomV.initPerm()
+        print('Classifier training started!')
+        for _ in range(count):
+            perm = self.randomV.randomShuffle(perm)
+            for training_element_index in perm:
+                self.weightCalculus(train_set[0][training_element_index].reshape((1, self.input_size)), train_set[1][training_element_index])
+                print('Finished training iteration {}'.format(_+1))
     
+    def classify(self, input):
+        return np.argmax((np.dot(input, self.weights) + self.biases))
 
-    def classify():
-        return
+    def classificationArray(self, input):
+        return np.dot(input, self.weights) + self.biases
+
     
 def read_data():
     fd = gzip.open('mnist.pkl.gz','rb')
@@ -168,5 +198,5 @@ if __name__ == "__main__":
     print('Data successfully loaded!')
 
  # initialisation parameeters
-    classifier_activate = ClassifierDigits()  
+    classifier_activate = ClassifierDigits()
 
