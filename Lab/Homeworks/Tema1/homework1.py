@@ -1,6 +1,5 @@
 import pickle, gzip, numpy as np
 import matplotlib.pyplot as plt
-import tensorflow as tf
 import math
 import random
 
@@ -83,17 +82,9 @@ class RandomDistribution:
   def uniformDistribution(self):
        return np.random.rand(self.input_size, self.output_size)
   
-  def xavierDistribution(self):
-
-    xavier_stddev = np.sqrt(1.0 / (self.input_size + self.output_size))
-    weights = np.random.randn(self.input_size, self.output_size) * xavier_stddev + 0.5
-    return weights
-  
-  def xavierTensor(self):
-    in_dim, out_dim = self.input_size,self.output_size
-    xavier_lim = tf.sqrt(6.)/tf.sqrt(tf.cast(in_dim + out_dim, tf.float32))
-    weight_vals = tf.random.uniform(shape=(in_dim, out_dim), 
-                                  minval=-xavier_lim, maxval=xavier_lim, seed=22)
+  def xavierDistrib(self):
+    xavier_lim = math.sqrt(6.0 / (self.input_size + self.output_size))
+    weight_vals = [[random.uniform(-xavier_lim, xavier_lim) for _ in range(self.output_size)] for _ in range(self.input_size)]
     return weight_vals
   
   def initialize_biases_sigmoid(self):
@@ -123,16 +114,13 @@ class ClassifierDigits:
     
         self.randomV = RandomDistribution(input_size,output_size)
 
-        #self.weights = randomV.xavierDistribution()
-        self.weights = self.randomV.xavierTensor()
+        self.weights = self.randomV.xavierDistrib()
         self.bias = self.randomV.initialize_biases_sigmoid()
         self.mat =  np.identity(10)
     
-
-
     def weightCalculus(self,input_data,element):
         dotProduct = np.dot(input_data,self.weights) + self.bias
-        activatedFunctions = ActivateFunctions(dotProduct,self.count_perceptrons).SoftStep() # SIGMOIDA PARE CA DA BENE SO DE VERIF GRESELI
+        activatedFunctions = ActivateFunctions(dotProduct,self.count_perceptrons).SoftStep()
         error = (self.mat[element] - activatedFunctions) * self.learning_rate
         errorMatrix = np.transpose(np.tile(input_data, (self.count_perceptrons, 1)))
         for i in range(self.count_perceptrons):
@@ -140,23 +128,9 @@ class ClassifierDigits:
         self.weights = self.weights + errorMatrix
         self.bias = self.bias + (self.mat[element] - activatedFunctions) * self.learning_rate 
 
-    #aici intervalul sa fie bun
-    def wightPreactivated(self,input_data,element):
-     
-        dotProduct = np.dot(input_data,self.weights) + self.bias
-        activatedFunctions = ActivateFunctions(dotProduct).SoftStep()
-        error = (self.mat[element] - activatedFunctions) * self.learning_rate
-        errorMatrix = np.transpose(np.tile(input_data, (self.count_perceptrons, 1)))
-        for i in range(self.count_perceptrons):
-            errorMatrix[:, i] *= error[0][i]
-        self.weights = self.weights + errorMatrix
-        self.bias = self.bias + (self.mat[element] - activatedFunctions) * self.learning_rate 
-#Mai am de lucru aici 
     def train(self,train_set,count):
        
         randomPerm = self.randomV.initPerm(len(train_data[0]))
-        print('Dim',len(randomPerm))
-        print('Classifier training started!')
         it = 0
         for _ in range(count):
             perm = self.randomV.randomShuffle(randomPerm)
@@ -165,13 +139,9 @@ class ClassifierDigits:
                 self.weightCalculus(train_set[0][training_element_index].reshape((1, self.input_size)), train_set[1][training_element_index])
             print('Finished iteration ',it)
     
-    def classify(self, input):
+    def decision(self, input):
         return np.argmax((np.dot(input, self.weights) + self.bias))
 
-    def classificationArray(self, input):
-        return np.dot(input, self.weights) + self.bias
-
-    
 def read_data():
     fd = gzip.open('mnist.pkl.gz','rb')
     train_set, valid_set, test_set = pickle.load(fd, encoding="latin")
@@ -185,16 +155,14 @@ if __name__ == "__main__":
     train_x,train_y=train_data
     print('Data successfully loaded!')
 
-    act_function_iterations = 30
+    iterations = 7
 
-    classifier_activate = ClassifierDigits(len(train_data[0][0]),10,0.001)
-    print('Classifier function started iterations,',act_function_iterations)
-    classifier_activate.train(train_data, act_function_iterations)
+    MLP = ClassifierDigits(len(train_data[0][0]),10,0.001)
+    print('Classifier function started iterations,',iterations)
+    MLP.train(train_data, iterations)
 
-    trueClassif = sum([1 if (classifier_activate.classify(test_data[0][i]) == test_data[1][i]) else 0 for i in range(len(test_data[0]))])
+    trueClassif = sum([1 if (MLP.decision(test_data[0][i]) == test_data[1][i]) else 0 for i in range(len(test_data[0]))])
 
    
     print('Number of correct classifications with activation function: ',trueClassif,' of ',len(test_data[0]))
     print('Success percent activation: ',100.0 * trueClassif / len(test_data[0]),'%')
-
- # initialisation parameeters
