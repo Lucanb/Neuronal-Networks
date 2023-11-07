@@ -112,26 +112,34 @@ class RandomDistribution:
 
 randomD = RandomDistribution(10,786)
 
+def arrayT(array):
+   
+   for i in range(len(array[0])):
+      array[0][i] =  array[0][i] * 2
+   return array   
 
-print('THOSE ARE OUR DISTRIBUTIONS : \n')
-print('xavierTensor',randomD.xavierTensor())
-print('xavierDistr',randomD.xavierDistribution())
-print('uniforDitrib',randomD.uniformDistribution())
-print('initialises bieases',randomD.initialize_biases_sigmoid())
-print('\n')
+array = [[1,3,5,7]]
+print(arrayT(array))
 
-print('Those are our activation Functions :\n')
+# print('THOSE ARE OUR DISTRIBUTIONS : \n')
+# print('xavierTensor',randomD.xavierTensor())
+# print('xavierDistr',randomD.xavierDistribution())
+# print('uniforDitrib',randomD.uniformDistribution())
+# print('initialises bieases',randomD.initialize_biases_sigmoid())
+# print('\n')
 
-randomValues = RandomDistribution(1,20).xavierDistribution()
-activateF = ActivateFunctions(randomValues)
+# print('Those are our activation Functions :\n')
 
-print('identity : ',activateF.identityActivate())
-print('ArcTan',activateF.ArcTan())
-print('BinaryResult',activateF.binaryStep())
-print('ELU :',activateF.ELU(1.2))
-print('Prelu :',activateF.Prelu(2.4))
-print('RELU :',activateF.reluActivate())
-print('SoftMax :',activateF.SoftMax())
-print('softPlus :',activateF.softPlus())
-print('softStep :',activateF.SoftStep())
-print('Tahn :',activateF.TanH())
+# randomValues = RandomDistribution(1,20).xavierDistribution()
+# activateF = ActivateFunctions(randomValues)
+
+# print('identity : ',activateF.identityActivate())
+# print('ArcTan',activateF.ArcTan())
+# print('BinaryResult',activateF.binaryStep())
+# print('ELU :',activateF.ELU(1.2))
+# print('Prelu :',activateF.Prelu(2.4))
+# print('RELU :',activateF.reluActivate())
+# print('SoftMax :',activateF.SoftMax())
+# print('softPlus :',activateF.softPlus())
+# print('softStep :',activateF.SoftStep())
+# print('Tahn :',activateF.TanH())
