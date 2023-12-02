@@ -1,123 +1,109 @@
 import numpy as np
 import math
-
+import torch
+import tensorflow as tf
 
 class ActivateFunctions:
-  def __init__(self, array, count_array):
-    self.array = array
-    self.dim1 = count_array
+    def __init__(self, array, count_array):
+        self.array = array
+        self.dim1 = count_array
 
-  def identityActivate(self):
-    return self.array
+    def identityActivate(self):
+        return torch.tensor(self.array, dtype=torch.float32)
 
-  def derivative_identityActivate(self):
-    return np.ones_like(self.array)
+    def derivative_identityActivate(self):
+        return torch.ones_like(self.identityActivate())
 
-  def reluActivate(self):
-    for index in range(len(self.array[0])):
-      if self.array[0][index] < 0:
-        self.array[0][index] = 0
-    return self.array
+    def reluActivate(self):
+        return F.relu(self.identityActivate())
 
-  def derivative_reluActivate(self):
-    return np.where(self.array <= 0, 0, 1)
+    def derivative_reluActivate(self):
+        return torch.where(self.identityActivate() <= 0, torch.zeros_like(self.identityActivate()), torch.ones_like(self.identityActivate()))
 
-  def preluActivate(self, alpha):
-    for index in range(len(self.array[0])):
-      if self.array[0][index] < 0:
-        self.array[0][index] = alpha * self.array[0][index]
-    return self.array
+    def preluActivate(self, alpha):
+        return F.prelu(self.identityActivate(), torch.tensor(alpha, dtype=torch.float32))
 
-  def derivative_preluActivate(self, alpha):
-    return np.where(self.array <= 0, alpha, 1)
+    def derivative_preluActivate(self, alpha):
+        return torch.where(self.identityActivate() <= 0, torch.tensor(alpha, dtype=torch.float32), torch.ones_like(self.identityActivate()))
 
-  def binaryStep(self):
-    for index in range(len(self.array[0])):
-      if self.array[0][index] <= 0:
-        self.array[0][index] = 0
-      else:
-        self.array[0][index] = 1
-    return self.array
+    def binaryStep(self):
+        return torch.where(self.identityActivate() <= 0, torch.zeros_like(self.identityActivate()), torch.ones_like(self.identityActivate()))
 
-  def derivative_binaryStep(self):
-    raise ValueError("Derivata pentru Binary Step nu este definită în 0")
+    def derivative_binaryStep(self):
+        raise ValueError("Derivata pentru Binary Step nu este definită în 0")
 
-  def softStep(self):
-    for index in range(len(self.array[0])):
-      self.array[0][index] = 1 / (1 + math.exp(-self.array[0][index]))
-    return self.array
+    def softStep(self):
+        return torch.sigmoid(self.identityActivate())
 
-  def derivative_softStep(self):
-    sigmoid_result = 1 / (1 + np.exp(-self.array))
-    return sigmoid_result * (1 - sigmoid_result)
+    def derivative_softStep(self):
+        sigmoid_result = torch.sigmoid(self.identityActivate())
+        return sigmoid_result * (1 - sigmoid_result)
 
-  def softmax(self):
-    e_x = np.exp(self.array - np.max(self.array))
-    return e_x / e_x.sum(axis=0)
+    def softmax(self):
+        return F.softmax(self.identityActivate(), dim=1)
 
-  def derivative_softmax(self):
-    raise NotImplementedError("Derivata pentru Softmax nu este implementată direct aici.")
+    def derivative_softmax(self):
+        raise NotImplementedError("Derivata pentru Softmax nu este implementată direct aici.")
 
-  def softPlus(self):
-    for index in range(len(self.array[0])):
-      self.array[0][index] = 1 + math.exp(self.array[0][index])
-    return self.array
+    def softPlus(self):
+        return F.softplus(self.identityActivate())
 
-  def derivative_softPlus(self):
-    return 1 / (1 + np.exp(-self.array))
+    def derivative_softPlus(self):
+        return torch.sigmoid(self.identityActivate())
 
-  def eluActivate(self, alpha):
-    for index in range(len(self.array[0])):
-      if self.array[0][index] < 0:
-        self.array[0][index] = alpha * (math.exp(self.array[0][index]) - 1)
-    return self.array
+    def eluActivate(self, alpha):
+        return F.elu(self.identityActivate(), alpha=torch.tensor(alpha, dtype=torch.float32))
 
-  def derivative_eluActivate(self, alpha):
-        return np.where(self.array <= 0, alpha * np.exp(self.array), 1)
+    def derivative_eluActivate(self, alpha):
+        return torch.where(self.identityActivate() <= 0, torch.tensor(alpha, dtype=torch.float32) * torch.exp(self.identityActivate()), torch.ones_like(self.identityActivate()))
 
-  def tanhActivate(self):
-    for index in range(len(self.array[0])):
-      self.array[0][index] = 2 / (1 + math.exp(2 * (-self.array[0][index]))) - 1
-    return self.array
+    def tanhActivate(self):
+        return torch.tanh(self.identityActivate())
 
-  def derivative_tanhActivate(self):
-    return 1 - np.tanh(self.array) ** 2
+    def derivative_tanhActivate(self):
+        return 1 - torch.tanh(self.identityActivate()) ** 2
 
-  def arcTanActivate(self):
-    for index in range(len(self.array[0])):
-      result = math.atan(self.array[0][index])
-      self.array[0][index] = math.degrees(result)
-    return self.array
+    def arcTanActivate(self):
+      radians_result = torch.atan(self.identityActivate())
+      degrees_result = radians_result * (180.0 / math.pi)
+      return degrees_result
 
-  def derivative_arcTanActivate(self):
-    return 1 / (1 + self.array ** 2)
-   
+
+    def derivative_arcTanActivate(self):
+        return 1 / (1 + self.identityActivate() ** 2)
+
 class RandomDistribution:
-  
-  def __init__(self,input_size,output_size):
-      self.input_size = input_size
-      self.output_size = output_size
-  
-  def uniformDistribution(self):
-       return np.random.rand(self.input_size, self.output_size)
-  
-  def xavierDistrib(self):
-    xavier_lim = math.sqrt(6.0 / (self.input_size + self.output_size))
-    weight_vals = [[np.random.uniform(-xavier_lim, xavier_lim) for _ in range(self.output_size)] for _ in range(self.input_size)]
-    return weight_vals
-  
-  def initialize_biases_sigmoid(self):
+    def __init__(self, input_size, output_size):
+        self.input_size = input_size
+        self.output_size = output_size
 
-    biases = np.random.randn(self.output_size) * 0.01
-    return biases
-  
-  def initPerm(self,size):
-    array=[]
-    for i in range(size):
-      array.append(i)
-    return array
+    def uniformDistribution(self):
+        return torch.rand((self.input_size, self.output_size), dtype=torch.float32)
 
-  def randomShuffle(self,array):
-    
-    np.random.shuffle(array)
-    return array
+    def xavierDistrib(self):
+        xavier_lim = math.sqrt(6.0 / (self.input_size + self.output_size))
+        weight_vals = torch.rand((self.input_size, self.output_size), dtype=torch.float32) * 2 * xavier_lim - xavier_lim
+        return weight_vals
+
+    def initialize_biases_sigmoid(self):
+        biases = torch.randn(self.output_size) * 0.01
+        return biases
+
+    def initPerm(self, size):
+        array = list(range(size))
+        return array
+
+    def randomShuffle(self, array):
+        shuffled_array = torch.randperm(len(array))
+        return shuffled_array
+
+  
+class MLP_Neuronal_Network():
+  
+    def __init__(self):
+  
+        return self    
+
+if __name__ == '__main__':
+  
+ print(torch.sigmoid(torch.tensor([1, 4, 5, 6], dtype=torch.float32)))
