@@ -4,83 +4,73 @@ import math
 
 class ActivateFunctions:
   
-  def __init__(self,array):
+  def __init__(self,array,count_array):
       self.array = array
-      self.dim1 = array.shape[0]
-      self.dim2 = array.shape[1]
+      self.dim1 = count_array
   
   def identityActivate(self):
      return self.array
   
   def reluActivate(self):
-    myarray = self.array.copy()
-    myarray = myarray.flatten()  
-    for element in myarray:
-        if element < 0:
-           element = 0
-    return myarray.reshape(self.dim1,self.dim2)
+ 
+    for index in range(len(self.array[0])):
+        if self.array[0][index] < 0:
+           self.array[0][index] = 0
+
+    return self.array
         
   def Prelu(self,alpha): 
-    myarray = self.array.copy()
-    myarray = myarray.flatten()  
-    for element in myarray:
-        if element < 0:
-           element = alpha*element
-    return myarray.reshape(self.dim1,self.dim2)  
+  
+    for index in range(len(self.array[0])):
+        if self.array[0][index] < 0:
+           self.array[0][index] = alpha*self.array[0][index]
+    return self.array
  
   def binaryStep(self):
-    myarray = self.array.copy()
-    myarray = myarray.flatten()  
-    for element in myarray:
-        if element <= 0:
-            element = 0
+
+    for index in range(len(self.array[0])):
+        if self.array[0][index] <= 0:
+            self.array[0][index] = 0
         else:
-            element =1
-    return myarray.reshape(self.dim1,self.dim2)
+            self.array[0][index] =1
+    return self.array
         
   def SoftStep(self): 
-    myarray = self.array.copy()
-    myarray = myarray.flatten()  
-    for element in myarray:
-        element = 1/(1+math.exp(-element))
-    return myarray.reshape(self.dim1,self.dim2)  
+
+    for index in range(len(self.array[0])):
+         self.array[0][index] = 1/(1+math.exp(-self.array[0][index]))
+    return self.array
   
   def SoftMax(self):
-    myarray = self.array.copy()
-    myarray = myarray.flatten()  
-    e_x = np.exp(myarray - np.max(myarray))
-    return (e_x / e_x.sum(axis=0)).reshape(self.dim1,self.dim2)
+
+    e_x = np.exp(self.array[0] - np.max(self.array[0]))
+    return (e_x / e_x.sum(axis=0))
   
   def softPlus(self):
-    myarray = self.array.copy()
-    myarray = myarray.flatten()  
-    for element in myarray:
-        element = 1+math.exp(element)
-    return myarray.reshape(self.dim1,self.dim2) 
+    for index in range(len(self.array[0])):
+        self.array[0][index] = 1+math.exp(self.array[0][index])
+    return self.array
   
   def ELU(self,alpha):
-    myarray = self.array.copy()
-    myarray = myarray.flatten()  
-    for element in myarray:
-        if element < 0:
-            element = alpha*(math.exp(element) - 1)
 
-    return myarray.reshape(self.dim1,self.dim2)  
+    for index in range(len(self.array[0])):
+        if self.array[0][index] < 0:
+            self.array[0][index] = alpha*(math.exp(self.array[0][index]) - 1)
+
+    return self.array
   
   def TanH(self):
-    myarray = self.array.copy()
-    myarray = myarray.flatten()  
-    for element in myarray:
-        element = 2/(1+math.exp(2*(-element)))-1
-    return myarray.reshape(self.dim1,self.dim2)
+
+    for index in range(len(self.array[0])):
+        self.array[0][index] = 2/(1+math.exp(2*(-self.array[0][index])))-1
+    return self.array
        
   def ArcTan(self):    
-    myarray = self.array.copy()
-    myarray = myarray.flatten()  
-    for element in myarray:
-        result = math.atan(element)
-        element = math.degrees(result)
-    return myarray.reshape(self.dim1,self.dim2)
+
+     for index in range(len(self.array[0])):
+        result = math.atan(self.array[0][index])
+        self.array[0][index] = math.degrees(result)
+     return self.array
    
 class RandomDistribution:
   
@@ -89,25 +79,28 @@ class RandomDistribution:
       self.output_size = output_size
   
   def uniformDistribution(self):
-      return np.random.rand(self.input_size, self.output_size)
+       return np.random.rand(self.input_size, self.output_size)
   
-  def xavierDistribution(self):
-
-    xavier_stddev = np.sqrt(1.0 / (self.input_size + self.output_size))
-    weights = np.random.randn(self.input_size, self.output_size) * xavier_stddev + 0.5
-    return weights
-  
-  def xavierTensor(self):
-    in_dim, out_dim = self.input_size,self.output_size
-    xavier_lim = tf.sqrt(6.)/tf.sqrt(tf.cast(in_dim + out_dim, tf.float32))
-    weight_vals = tf.random.uniform(shape=(in_dim, out_dim), 
-                                  minval=-xavier_lim, maxval=xavier_lim, seed=22)
+  def xavierDistrib(self):
+    xavier_lim = math.sqrt(6.0 / (self.input_size + self.output_size))
+    weight_vals = [[np.random.uniform(-xavier_lim, xavier_lim) for _ in range(self.output_size)] for _ in range(self.input_size)]
     return weight_vals
   
   def initialize_biases_sigmoid(self):
 
-    biases = np.random.randn(self.output_size) * 0.01  # You can adjust the scale as needed
-    return np.abs(biases)
+    biases = np.random.randn(self.output_size) * 0.01
+    return biases
+  
+  def initPerm(self,size):
+    array=[]
+    for i in range(size):
+      array.append(i)
+    return array
+
+  def randomShuffle(self,array):
+    
+    np.random.shuffle(array)
+    return array
 
 
 randomD = RandomDistribution(10,786)
@@ -122,16 +115,16 @@ array = [[1,3,5,7]]
 print(arrayT(array))
 
 print('THOSE ARE OUR DISTRIBUTIONS : \n')
-print('xavierTensor',randomD.xavierTensor())
-print('xavierDistr',randomD.xavierDistribution())
+# print('xavierTensor',randomD.xavierTensor())
+# print('xavierDistr',randomD.xavierDistribution())
 print('uniforDitrib',randomD.uniformDistribution())
 print('initialises bieases',randomD.initialize_biases_sigmoid())
 print('\n')
 
 print('Those are our activation Functions :\n')
 
-randomValues = RandomDistribution(1,20).xavierDistribution()
-activateF = ActivateFunctions(randomValues)
+randomValues = RandomDistribution(1,20).xavierDistrib()
+activateF = ActivateFunctions(randomValues,len(randomValues))
 
 print('identity : ',activateF.identityActivate())
 print('ArcTan',activateF.ArcTan())
