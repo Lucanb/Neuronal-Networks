@@ -2,7 +2,7 @@ import numpy as np
 import math
 import torch
 import tensorflow as tf
-import torch.nn.functional as F
+
 
 
 class ActivateFunctions:
