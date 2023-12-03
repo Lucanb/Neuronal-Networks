@@ -151,9 +151,6 @@ def read_data():
 
 if __name__ == "__main__":
     
-    #trebuia torch --> face dejaa derivate la functiile deactivare inspate
-    #problema e ca nu am folosit minibatch(am fct online training ca am trecut prin fiecare) -- ca am trecut prin toate vezi minibatch/online training si cealalat(cu batch-uri)
-    #1 dim batch / 2 dim batch / 3 dim batch 
     print('Reading data ...')
     train_data,test_data =  read_data()
     train_x,train_y=train_data
