@@ -100,23 +100,58 @@ class RandomDistribution:
   
 class MLP_Neuronal_Network():
   
-    def __init__(self,input_size,output_size,count_perceptrons,batch_size,learning_rate):
+    def __init__(self,input_size,output_size,count_perceptrons,batch_size,learning_rate,count_hidden_layers):
         self.input_size = input_size
         self.count_perceptrons = count_perceptrons
         self.batch_size = batch_size
         self.count_batch = input_size/batch_size
         self.learning_rate = learning_rate
-      
+        self.count_hidden_layers =count_hidden_layers
+        
+        self.weights_in  = None
+        self.hidden_weights = {}
+        for i in range(count_hidden_layers):
+            self.hidden_weights[i] = None
+        self.weights_out = None
+
+        self.bias_in = None 
+        self.hidden_bias={}
+        for i in range(count_hidden_layers):
+            self.hidden_bias[i] = None
+        self.bias_out = None
+
         self.randomV = RandomDistribution(input_size,output_size) 
         self.delta = np.zeros((int(output_size), int(self.count_batch))) #self.randomV.xavierDistrib()
         self.B = np.zeros(output_size) #self.randomV.initialize_biases_sigmoid()
         self.mat =  np.identity(10)
 
     
-    def forward_propagation(self,train_set,batch_size):                #asta pt un batch
-        return
+    def forward_propagation(self, input_data, element):                #asta pt un batch
+        
+        dot_product = np.dot(input_data,self.weights_in) + self.bias
+        activatedFunctions1 = ActivateFunctions(dot_product, self.count_perceptrons).SoftStep()
+        
+        for i in range(self.count_hidden_layers):
+            if i == 0:
+                dot_product_i = np.dot(activatedFunctions1,self.weights_in) + self.bias_in
+                activatedFunctions1_i = ActivateFunctions(dot_product_i, self.count_perceptrons).SoftStep()
+            else:
+                dot_product_i = np.dot(activatedFunctions1_i,self.hidden_weights[i-1]) + self.hidden_bias[i-1]
+                activatedFunctions1_i = ActivateFunctions(dot_product_i, self.count_perceptrons).SoftStep()
+
+        out_product = np.dot(activatedFunctions1_i,self.weights_out) + self.bias_out
+        activatedFunctions_out = ActivateFunctions(out_product, self.count_perceptrons).SoftStep()
+        return activatedFunctions_out
     
-    def backward_propagation_(self,train_set,batch_size):             #asta pt un batch
+    def bias_lose(prediction,labels):
+        
+        epsilon = 1e-15
+        prediction = np.clip(prediction, epsilon, 1 - epsilon)
+        loss = -np.sum(labels * np.log(prediction)) / len(labels)
+        return loss
+        
+    def backward_propagation_(self, input_data, element , prediction):             #asta pt un batch
+        
         return
     
     def train(self,train_set,count):                                #asta pt toate batch-urile(acea suma) so implem ambele metode
