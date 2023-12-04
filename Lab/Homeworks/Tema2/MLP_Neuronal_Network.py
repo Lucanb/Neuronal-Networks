@@ -110,9 +110,13 @@ class MLP_Neuronal_Network():
         
         self.weights_in  = None
         self.hidden_weights = {}
-        for i in range(count_hidden_layers):
-            self.hidden_weights[i] = None
+
         self.weights_out = None
+
+        self.value_in = None
+        self.value_out = None
+        self.hidden_value = {}
+
 
         self.bias_in = None 
         self.hidden_bias={}
@@ -130,17 +134,20 @@ class MLP_Neuronal_Network():
         
         dot_product = np.dot(input_data,self.weights_in) + self.bias
         activatedFunctions1 = ActivateFunctions(dot_product, self.count_perceptrons).SoftStep()
-        
+        self.value_in = activatedFunctions1
         for i in range(self.count_hidden_layers):
             if i == 0:
                 dot_product_i = np.dot(activatedFunctions1,self.weights_in) + self.bias_in
                 activatedFunctions1_i = ActivateFunctions(dot_product_i, self.count_perceptrons).SoftStep()
+                self.hidden_value[i] = activatedFunctions1_i
             else:
                 dot_product_i = np.dot(activatedFunctions1_i,self.hidden_weights[i-1]) + self.hidden_bias[i-1]
                 activatedFunctions1_i = ActivateFunctions(dot_product_i, self.count_perceptrons).SoftStep()
+                self.hidden_value[i] = activatedFunctions1_i
 
         out_product = np.dot(activatedFunctions1_i,self.weights_out) + self.bias_out
         activatedFunctions_out = ActivateFunctions(out_product, self.count_perceptrons).SoftStep()
+        self.value_out = activatedFunctions_out
         return activatedFunctions_out
     
     def bias_lose(prediction,labels):
@@ -150,9 +157,37 @@ class MLP_Neuronal_Network():
         loss = -np.sum(labels * np.log(prediction)) / len(labels)
         return loss
         
-    def backward_propagation_(self, input_data, element , prediction):             #asta pt un batch
-        
-        return
+    def backward_propagation_(self, input_data, element):
+                grad_weights_in = np.zeros_like(self.weights_in)
+                grad_hidden_weights = {i: np.zeros_like(self.hidden_weights[i]) for i in range(self.count_hidden_layers)}
+                grad_weights_out = np.zeros_like(self.weights_out)
+                grad_bias_in = np.zeros_like(self.bias_in)
+                grad_hidden_bias = {i: np.zeros_like(self.hidden_bias[i]) for i in range(self.count_hidden_layers)}
+                grad_bias_out = np.zeros_like(self.bias_out)
+
+                error_out = (self.value_out - self.mat[element]) * ActivateFunctions.derivative_softStep(self.value_out)
+                grad_weights_out += np.outer(self.hidden_value[self.count_hidden_layers - 1], error_out)
+                grad_bias_out += error_out.sum(axis=0)
+
+                error_hidden = np.dot(error_out, self.weights_out.T)
+                for i in range(self.count_hidden_layers - 1, -1, -1):
+                    error_hidden *= ActivateFunctions.derivative_softStep(self.hidden_value[i])
+                    grad_hidden_weights[i] += np.outer(self.hidden_value[i - 1] if i > 0 else input_data, error_hidden)
+                    grad_hidden_bias[i] += error_hidden.sum(axis=0)
+                    error_hidden = np.dot(error_hidden, self.hidden_weights[i].T)
+
+                error_in = error_hidden * ActivateFunctions.derivative_softStep(self.value_in)
+                grad_weights_in += np.outer(input_data, error_in)
+                grad_bias_in += error_in.sum(axis=0)
+
+                self.weights_in -= self.learning_rate * grad_weights_in
+                for i in range(self.count_hidden_layers):
+                    self.hidden_weights[i] -= self.learning_rate * grad_hidden_weights[i]
+                self.weights_out -= self.learning_rate * grad_weights_out
+                self.bias_in -= self.learning_rate * grad_bias_in
+                for i in range(self.count_hidden_layers):
+                    self.hidden_bias[i] -= self.learning_rate * grad_hidden_bias[i]
+                self.bias_out -= self.learning_rate * grad_bias_out
     
     def train(self,train_set,count):                                #asta pt toate batch-urile(acea suma) so implem ambele metode
         return
