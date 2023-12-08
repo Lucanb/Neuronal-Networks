@@ -1,101 +1,69 @@
-import pickle, gzip,numpy as np
-import math
 import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
+from torchvision import transforms, datasets
+from sklearn.metrics import accuracy_score, f1_score
 
+class MyNN(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super(MyNN, self).__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(hidden_size, output_size)
+        self.softmax = nn.Softmax(dim=1)
 
-class ActivateFunctions:
-    def __init__(self, array, count_array):
-        self.array = array
-        self.dim1 = count_array
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)
+        x = self.softmax(x)
+        return x
 
-    def identityActivate(self):
-        return torch.tensor(self.array, dtype=torch.float32)
+class DigitClassifier:
+    def __init__(self, input_size, hidden_size, output_size, lr=0.001):
+        self.model = MyNN(input_size, hidden_size, output_size)
+        self.criterion = nn.CrossEntropyLoss()
+        self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
 
-    def derivative_identityActivate(self):
-        return torch.ones_like(self.identityActivate())
+    def train(self, train_loader, epochs=5):
+        for epoch in range(epochs):
+            for inputs, labels in train_loader:
+                self.optimizer.zero_grad()
+                inputs = inputs.view(inputs.size(0), -1)
+                outputs = self.model(inputs)
+                loss = self.criterion(outputs, labels)
+                loss.backward()
+                self.optimizer.step()
 
-    def reluActivate(self):
-        return torch.nn.functional.relu(self.identityActivate())
+    def evaluate(self, data_loader):
+        self.model.eval()
+        all_preds = []
+        all_labels = []
+        
+        with torch.no_grad():
+            for inputs, labels in data_loader:
+                inputs = inputs.view(inputs.size(0), -1)
+                outputs = self.model(inputs)
+                _, preds = torch.max(outputs, 1)
+                all_preds.extend(preds.numpy())
+                all_labels.extend(labels.numpy())
 
-    def derivative_reluActivate(self):
-        return torch.where(self.identityActivate() <= 0, torch.zeros_like(self.identityActivate()), torch.ones_like(self.identityActivate()))
+        accuracy = accuracy_score(all_labels, all_preds)
+        f1 = f1_score(all_labels, all_preds, average=None)
+        return accuracy, f1
 
-    def preluActivate(self, alpha):
-        return torch.nn.functional.prelu(self.identityActivate(), torch.tensor(alpha, dtype=torch.float32))
+input_size = 784
+hidden_size = 128
+output_size = 10
 
-    def derivative_preluActivate(self, alpha):
-        return torch.where(self.identityActivate() <= 0, torch.tensor(alpha, dtype=torch.float32), torch.ones_like(self.identityActivate()))
-
-    def binaryStep(self):
-        return torch.where(self.identityActivate() <= 0, torch.zeros_like(self.identityActivate()), torch.ones_like(self.identityActivate()))
-
-    def derivative_binaryStep(self):
-        raise ValueError("Derivata pentru Binary Step nu este definită în 0")
-
-    def softStep(self):
-        return torch.sigmoid(self.identityActivate())
-
-    def derivative_softStep(self):
-        sigmoid_result = torch.sigmoid(self.identityActivate())
-        return sigmoid_result * (1 - sigmoid_result)
-
-    def softmax(self):
-        return torch.nn.functional.softmax(self.identityActivate(), dim=1)
-
-    def derivative_softmax(self):
-        raise NotImplementedError("Derivata pentru Softmax nu este implementată direct aici.")
-
-    def softPlus(self):
-        return torch.nn.functional.softplus(self.identityActivate())
-
-    def derivative_softPlus(self):
-        return torch.sigmoid(self.identityActivate())
-
-    def eluActivate(self, alpha):
-        return torch.nn.functional.elu(self.identityActivate(), alpha=torch.tensor(alpha, dtype=torch.float32))
-
-    def derivative_eluActivate(self, alpha):
-        return torch.where(self.identityActivate() <= 0, torch.tensor(alpha, dtype=torch.float32) * torch.exp(self.identityActivate()), torch.ones_like(self.identityActivate()))
-
-    def tanhActivate(self):
-        return torch.tanh(self.identityActivate())
-
-    def derivative_tanhActivate(self):
-        return 1 - torch.tanh(self.identityActivate()) ** 2
-
-    def arcTanActivate(self):
-      radians_result = torch.atan(self.identityActivate())
-      degrees_result = radians_result * (180.0 / math.pi)
-      return degrees_result
-
-
-    def derivative_arcTanActivate(self):
-        return 1 / (1 + self.identityActivate() ** 2)
-
-class RandomDistribution:
-    def __init__(self, input_size, output_size):
-        self.input_size = input_size
-        self.output_size = output_size
-
-    def uniformDistribution(self):
-        return torch.rand((self.input_size, self.output_size), dtype=torch.float32)
-
-    def xavierDistrib(self):
-        xavier_lim = math.sqrt(6.0 / (self.input_size + self.output_size))
-        weight_vals = torch.rand((self.input_size, self.output_size), dtype=torch.float32) * 2 * xavier_lim - xavier_lim
-        return weight_vals
-
-    def initialize_biases_sigmoid(self):
-        biases = torch.randn(self.output_size) * 0.01
-        return biases
-
-    def initPerm(self, size):
-        array = list(range(size))
-        return array
-
-    def randomShuffle(self, array):
-        shuffled_array = torch.randperm(len(array))
-        return shuffled_array
-    
- 
-#class MLP_Neuronal_Network():
+classifier = DigitClassifier(input_size, hidden_size, output_size)
+transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
+train_dataset = datasets.MNIST(root='./data', train=True, transform=transform, download=True)
+test_dataset = datasets.MNIST(root='./data', train=False, transform=transform, download=True)
+batch_size = 64
+train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
+test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
+classifier.train(train_loader, epochs=5)
+test_accuracy, test_f1 = classifier.evaluate(test_loader)
+print(f'Accuracy: {test_accuracy} \n f1 : {test_f1}')
