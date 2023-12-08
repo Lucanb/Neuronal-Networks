@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.init as init
 from torch.utils.data import DataLoader
 from torchvision import transforms, datasets
 from sklearn.metrics import accuracy_score, f1_score
@@ -9,8 +10,10 @@ class MyNN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(MyNN, self).__init__()
         self.fc1 = nn.Linear(input_size, hidden_size)
+        init.xavier_uniform_(self.fc1.weight)
         self.relu = nn.ReLU()
         self.fc2 = nn.Linear(hidden_size, output_size)
+        init.xavier_uniform_(self.fc2.weight)
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
