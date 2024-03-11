@@ -24,10 +24,10 @@ class MyNN(nn.Module):
         return x
 
 class DigitClassifier:
-    def __init__(self, input_size, hidden_size, output_size, lr=0.001):
+    def __init__(self, input_size, hidden_size, output_size, learning_rate=0.001):
         self.model = MyNN(input_size, hidden_size, output_size)
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
 
     def train(self, train_loader, epochs=5):
         for epoch in range(epochs):
@@ -64,7 +64,7 @@ classifier = DigitClassifier(input_size, hidden_size, output_size)
 transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
 train_dataset = datasets.MNIST(root='./data', train=True, transform=transform, download=True)
 test_dataset = datasets.MNIST(root='./data', train=False, transform=transform, download=True)
-batch_size = 64
+batch_size = 100
 train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
 classifier.train(train_loader, epochs=5)
